@@ -688,10 +688,13 @@ function tapDog(evt){
   const key = state.selected;
   state.dogs[key].count += 1;
 
+  // 진동: 소리보다 먼저 (즉각 체감)
+  try {
+    if(navigator.vibrate) navigator.vibrate(25);
+  } catch(e){}
   spawnParticles(evt);
   squishAnim();
   playBarkSound(key);
-  if(navigator.vibrate) navigator.vibrate(18);
 
   const cnt = state.dogs[key].count;
   if(cnt % 100 === 0){
@@ -699,7 +702,9 @@ function tapDog(evt){
     showToast('🎊 뽑기권 획득! 신나는 뽑기 도전!');
     launchConfetti();
     playMilestoneSound();
-    if(navigator.vibrate) navigator.vibrate([30,40,30,40,60]);
+    try {
+      if(navigator.vibrate) navigator.vibrate([50,40,50,40,100]);
+    } catch(e){}
   }
 
   render();
@@ -834,7 +839,17 @@ function runGacha(){
 }
 
 /* ============ 이벤트 바인딩 ============ */
-document.getElementById('hitzone').addEventListener('click', tapDog);
+// 모바일: touchstart로 즉각 반응 / 데스크탑: click 폴백
+const hitzoneEl = document.getElementById('hitzone');
+hitzoneEl.addEventListener('touchstart', function(evt){
+  evt.preventDefault();  // 스크롤 방지
+  tapDog(evt);
+}, { passive: false });
+hitzoneEl.addEventListener('click', function(evt){
+  // touchstart가 이미 처리했으면 click은 무시 (300ms 지연 방지)
+  if(evt.sourceCapabilities && evt.sourceCapabilities.firesTouchEvents) return;
+  tapDog(evt);
+});
 document.getElementById('ticketPill').addEventListener('click', openGacha);
 document.getElementById('homeBtn').addEventListener('click', openHome);
 document.getElementById('homeBackBtn').addEventListener('click', closeHome);
